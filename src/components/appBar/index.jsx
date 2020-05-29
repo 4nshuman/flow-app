@@ -13,7 +13,6 @@ class MyAppBar extends React.Component{
     }
 
     render(){
-        console.log('captured user : ', this.props.user);
         return(
             <AppBar position="static" style={{background:"#a901b0"}}>
                 <Toolbar>
