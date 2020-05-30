@@ -56,13 +56,29 @@ class NodeItem extends React.Component {
     tmp[event.target.name] = event.target.value;
     this.setState({ 
       item: tmp
-    });
+    }, this.props.updateNodeData(this.state.item));
   };
+
+  stateHandler = () => {
+    const tmpItem = this.state.item;
+    if(tmpItem.isComplete){
+      tmpItem.isComplete = false;
+      tmpItem.inProgress = false;
+    }else if(tmpItem.inProgress){
+      tmpItem.isComplete = true;
+      tmpItem.inProgress = false;
+    }else{
+      tmpItem.isComplete = false;
+      tmpItem.inProgress = true;
+    }
+    this.setState({
+      item: tmpItem
+    })
+  }
 
   render(){
     const {
-      classes,
-      stateClickHandler
+      classes
     } = this.props;
     const item = this.state.item;
 
@@ -71,7 +87,7 @@ class NodeItem extends React.Component {
     return (
         <Badge 
         style={{color: statusColor}}
-        className={classes.root} badgeContent={<Status clickHandler={stateClickHandler}/>}>
+        className={classes.root} badgeContent={<Status clickHandler={this.stateHandler}/>}>
         <Box boxShadow={3}>
             <Card variant="outlined">
                 <CardContent>

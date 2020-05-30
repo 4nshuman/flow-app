@@ -42,18 +42,17 @@ class WorkFlow extends React.Component {
       shouldNotDisplayDelete: true,
       workFlows: []
     };
-    this.firestore = base.database().ref('workFlows');
+    this.firestoreGetter = base.database().ref(`workFlows/${this.props.currentUser.uID}`);
   }
 
   componentDidMount(){
-    this.firestore.on("value", this.setData, this.setError);
+    this.firestoreGetter.on("value", this.setData, this.setError);
   }
 
   setData = (snapshot) => {
     const temp = [];
     snapshot.forEach((snap) => {
         if(snap.val().owner === this.props.currentUser.uID){
-          console.log('test');
           temp.push(snap.val());
         }
     });
@@ -76,31 +75,45 @@ class WorkFlow extends React.Component {
   };
 
   addWorkFlow = () =>{
-    const workFlows = this.state.workflows;
-    const id = workFlows.length+1;
+    const workFlows = this.state.workFlows;
+    const id = Date.now();
+    const newWorkFlow = {
+      id: id,
+      owner: this.props.currentUser.uID,
+      name: `New WorkFlow`,
+      isComplete: false,
+      nodes: []
+    };
+    workFlows.push(newWorkFlow);
     this.setState({
-      workFlows: workFlows.push(
-        {
-          id: id,
-          owner: this.props.currentUser.uID,
-          name: `New WorkFlow : ${id}`,
-          isComplete: false,
-          nodes: []
-        }
-      )
+      workFlows: workFlows
     });
-    //const workflowRef = this.firestore.push();
-    this.firestore.set(this.state.workflows)
+    base.database()
+    .ref(`workFlows/${this.props.currentUser.uID}/${id}`)
+    .set(newWorkFlow)
   }
 
   navigateToNodes = (event, id) => {
     if(event.target.tagName!='svg' && event.target.tagName!='path' && event.target.tagName!='INPUT'){
-      window.open(`/workflow/${id}`);
+      window.location = `/workflow/${id}`;
     }
   }
 
+  deleteClickHandler = (workFlowItem) => () => {
+    const workFlowList = this.state.workFlows.filter((workFlow) => {
+      if(workFlow.id !== workFlowItem.id){
+          return true;
+      }
+  })
+  this.setState({
+    workFlows: workFlowList
+  });
+  base.database()
+    .ref(`workFlows/${this.props.currentUser.uID}`)
+    .set(workFlowList);
+  }
+
   render(){
-    console.log(this.state)
     const {classes} = this.props;
     return (
         <React.Fragment>
@@ -122,7 +135,7 @@ class WorkFlow extends React.Component {
             this.state.dataLoaded ?
             this.state.workFlows.map((workflow) => (
               <WorkFlowItem
-                deleteClickHandler={() => alert('workflow was to be deleted')}
+                deleteClickHandler={this.deleteClickHandler}
                 itemClickHandler={(e) => this.navigateToNodes(e, workflow.id)}
                 stateClickHandler={(e) => console.log(e.target.tagName)}
                 key = {workflow.id}

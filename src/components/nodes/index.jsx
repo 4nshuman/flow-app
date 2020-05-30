@@ -12,7 +12,7 @@ import SaveRoundedIcon from '@material-ui/icons/SaveRounded';
 import CancelRoundedIcon from '@material-ui/icons/CancelRounded';
 import {base} from '../../base';
 import {connect} from 'react-redux';
-import {userLoggedIn} from '../../redux/currentUser/actions';
+import {userLoggedIn, userLoggedOut} from '../../redux/currentUser/actions';
 import NodeItem from '../nodeItem';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';
@@ -54,38 +54,34 @@ class Nodes extends React.Component {
       dataLoaded: false,
       unAuthorizedWorkFlowFetch: false
     };
-    this.firestore = base.database().ref('workFlows');
   }
 
   componentDidMount(){
-    this.authListener();
-    this.firestore.on("value", this.setData, this.setError);
+    this.authListener().then(()=>{
+        base.database()
+        .ref(`workFlows/${this.props.currentUser.uID}`)
+        .on("value", this.setData, this.setError);
+    });
   }
 
   setData = (snapshot) => {
-    let invalidAuth = false
+    let dataLoaded = false;
     snapshot.forEach((snap) => {
         if(snap.val().id === parseInt(this.props.match.params.id)){
-            if(snap.val().owner === this.props.currentUser.uID){
-                this.setState({
-                    workFlow:{
-                        id: snap.val().id,
-                        status: snap.val().isComplete,
-                        nodes: snap.val().nodes || [],
-                        name: snap.val().name,
-                        owner: snap.val().owner
-                    }
-                })
-                invalidAuth = false
-            }
-            else{
-                invalidAuth = true
-            }
+            this.setState({
+                workFlow:{
+                    id: snap.val().id,
+                    isComplete: snap.val().isComplete,
+                    nodes: snap.val().nodes || [],
+                    name: snap.val().name,
+                    owner: snap.val().owner
+                }
+            });
+            dataLoaded = true;
         }
     })
     this.setState({
-        dataLoaded: !invalidAuth,
-        unAuthorizedWorkFlowFetch: invalidAuth
+        dataLoaded
     })
   }
 
@@ -94,16 +90,60 @@ class Nodes extends React.Component {
   }
 
   authListener = () => {
-    base.auth().onAuthStateChanged((user)=>{
-      if(user){
-        this.props.userLoggedIn(user);
-      }
-      else{
-        this.props.userLoggedOut();
-        alert('user not logged in');
-        window.location = '/'
-      }
+      return new Promise((resolve, reject) => {
+        base.auth().onAuthStateChanged((user)=>{
+            if(user){
+              this.props.userLoggedIn(user);
+              resolve();
+            }
+            else{
+              this.props.userLoggedOut();
+              alert('user not logged in');
+              window.location = '/'
+            }
+        });
+      });
+    }
+
+  addNode = () =>{
+    const workFlow = this.state.workFlow;
+    const id = Date.now();
+    const newNode = {
+        nodeId: id,
+        isComplete: false,
+        inProgress: false,
+        taskName: 'New Task',
+        description: 'Placeholder multi-line description - should be edited.'
+    }
+    workFlow.nodes.push(newNode);
+    this.setState({
+      workFlow: workFlow
     });
+    base.database()
+    .ref(`workFlows/${this.props.currentUser.uID}/${this.props.match.params.id}`)
+    .set(this.state.workFlow)
+  }
+
+  updateNodeData = (nodeItem) => () => {
+      const newNodesList = this.state.workFlow.nodes.map((node) => {
+          if(node.nodeId === nodeItem.nodeId){
+              return nodeItem;
+          }
+          else{
+              return node;
+          }
+      })
+      const workFlow = this.state.workFlow;
+      workFlow.nodes = newNodesList;
+      this.setState({
+        workFlow: workFlow
+      });
+  }
+
+  save = () => {
+    base.database()
+    .ref(`workFlows/${this.props.currentUser.uID}/${this.props.match.params.id}`)
+    .set(this.state.workFlow)
   }
 
   handleChange = (event) => {
@@ -118,7 +158,6 @@ class Nodes extends React.Component {
         name,
         status
     } = this.state.workFlow;
-    console.log(this.state);
     return (
         <React.Fragment>
         <AppBar position="static" style={{background:"white"}}>
@@ -135,11 +174,11 @@ class Nodes extends React.Component {
                     <DeleteForeverRoundedIcon style={{marginRight: '5px'}} />
                     Delete
                 </Button>
-                <Button className={classes.button} type='submit' variant="contained" style={{background: '#12be51'}}>
+                <Button onClick={this.addNode} className={classes.button} type='submit' variant="contained" style={{background: '#12be51'}}>
                     <AddCircleOutlineRoundedIcon style={{marginRight: '5px'}} />
                     Add Node
                 </Button>
-                <Button className={classes.button} type='submit' variant="contained" style={{background: '#3c5bd8'}}>
+                <Button onClick={this.save} className={classes.button} type='submit' variant="contained" style={{background: '#3c5bd8'}}>
                     <SaveRoundedIcon style={{marginRight: '5px'}} />
                     Save
                 </Button>
@@ -151,31 +190,13 @@ class Nodes extends React.Component {
             this.state.dataLoaded
             ? nodes.map((node) => (
               <NodeItem
-                deleteClickHandler={() => alert('workflow was to be deleted')}
-                itemClickHandler={(e) => console.log(e.target.tagName)}
-                stateClickHandler={(e) => console.log(e.target.tagName)}
+                updateNodeData={this.updateNodeData}
                 key = {node.nodeId}
                 item = {node}
               />
             ))
-            : this.state.unAuthorizedWorkFlowFetch 
-            ? <Box
-                className={classes.root}
-                style={{width: '500px', marginLeft:'30vw'}}
-                boxShadow={3}>
-                    <Card variant="outlined">
-                        <CardContent>
-                        <TextField fullWidth={true} id="outlined-basic" variant="outlined" label="Error" value="UnAuthorized to view this Flow" type="text"/>
-                        </CardContent>
-                        <CardActions className={classes.bottomText}>
-                            <Button variant="contained">
-                                <CancelRoundedIcon style={{marginRight: '5px'}} />
-                                Close
-                            </Button>
-                        </CardActions>
-                    </Card>
-                </Box>  
-            : <div className={classes.loader}>
+            : 
+            <div className={classes.loader}>
                 <h1>Loading...</h1><br/>
                 <CircularProgress />
             </div>
@@ -195,7 +216,8 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-      userLoggedIn: (user) => {dispatch(userLoggedIn(user))}
+      userLoggedIn: (user) => {dispatch(userLoggedIn(user))},
+      userLoggedOut: (user) => {dispatch(userLoggedOut())}
   }
 };
 

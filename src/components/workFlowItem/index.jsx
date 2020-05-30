@@ -74,7 +74,7 @@ class WorkFlowItem extends React.Component {
         invisible={this.state.shouldNotDisplayDelete}
         onMouseEnter={() => this.setState({shouldNotDisplayDelete:false})}
         onMouseLeave={() => this.setState({shouldNotDisplayDelete:true})}
-        className={classes.root} badgeContent={<Delete clickHandler={deleteClickHandler}/>} color="secondary">
+        className={classes.root} badgeContent={<Delete clickHandler={deleteClickHandler(item)}/>} color="secondary">
         <Box boxShadow={3}>
             <Card variant="outlined" onClick={itemClickHandler}>
                 <CardContent>
