@@ -14,20 +14,33 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function LoginForm() {
+export default function LoginForm(props) {
   const classes = useStyles();
   const [state, setState] = React.useState({
     remember: false,
+    email: '',
+    password: ''
   });
 
   const handleChange = (event) => {
-    setState({ ...state, [event.target.name]: event.target.checked });
+    if(event.target.name!=='remember'){
+      setState({ ...state, [event.target.name]: event.target.value });
+    }
+    else{
+      setState({ ...state, [event.target.name]: event.target.checked });
+    }
+
   };
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    props.logIn(state);
+  }
+
   return (
-    <form className={classes.root} autoComplete="off">
-      <TextField id="standard-basic" label="Email Id" type="email" />
-      <TextField id="standard-basic" label="Password" type="password" />
+    <form className={classes.root} autoComplete="off" onSubmit={handleSubmit}>
+      <TextField required id="standard-basic" label="Email Id" type="email" name='email' onChange={handleChange} />
+      <TextField required id="standard-basic" label="Password" type="password" name='password' onChange={handleChange} />
       <FormControlLabel
         control={
           <Checkbox

@@ -1,7 +1,7 @@
 import * as actions from './actionTypes';
 
 const initialState = {
-    currentUser: {}
+    currentUser: null
 }
 
 export default function reducer(state = initialState, action){
@@ -9,18 +9,17 @@ export default function reducer(state = initialState, action){
         case actions.USER_LOGGED_IN:
             return {
                 ...state,
-                user: {
+                currentUser: {
                     userEmail: action.payload.email,
-                    userName: action.payload.name
+                    userName: action.payload.name,
+                    uID: action.payload.uID
                 }
             };
-        case actions.ITEM_ADDED:
-            return [
+        case actions.USER_LOGGED_OUT:
+            return {
                 ...state,
-                {
-                    itemId: action.payload.itemId
-                }
-            ];
+                currentUser: null
+            };
         default:
             return state;
     }

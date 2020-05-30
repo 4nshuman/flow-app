@@ -7,9 +7,18 @@ import IconButton from '@material-ui/core/IconButton';
 import GroupWorkIcon from '@material-ui/icons/GroupWork';
 import './myAppBar.css';
 
+import {base} from '../../base';
+import {connect} from 'react-redux';
+import {userLoggedOut} from '../../redux/currentUser/actions';
+
 class MyAppBar extends React.Component{
     constructor(props){
         super(props);
+    }
+
+    handleLogOutRequest = () => {
+        base.auth().signOut();
+        this.props.userLoggedOut();
     }
 
     render(){
@@ -23,7 +32,10 @@ class MyAppBar extends React.Component{
                         FLOW APP
                     </Typography>
                     <div className="login-button">
-                    <Button variant="outlined" onClick={()=>{alert('test')}} color="inherit">Login</Button>
+                    {
+                        !!this.props.currentUser &&
+                        (<Button variant="contained" onClick={this.handleLogOutRequest} >Log Out</Button>)
+                    }
                     </div>
                 </Toolbar>
             </AppBar>
@@ -31,4 +43,16 @@ class MyAppBar extends React.Component{
     }
 }
 
-export default MyAppBar;
+const mapStateToProps = state => {
+    return {
+        currentUser: state.currentUser
+    }
+  };
+  
+  const mapDispatchToProps = dispatch => {
+    return {
+        userLoggedOut: () => {dispatch(userLoggedOut())}
+    }
+  };
+
+export default connect(mapStateToProps, mapDispatchToProps)(MyAppBar);

@@ -4,6 +4,11 @@ export const userLoggedIn = user => ({
     type: actions.USER_LOGGED_IN,
     payload: {
         email: user.email,
-        isSignedIn: true
+        name: user.displayName,
+        uID: user.uid
     }
+});
+
+export const userLoggedOut = () => ({
+    type: actions.USER_LOGGED_OUT
 });

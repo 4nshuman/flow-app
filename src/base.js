@@ -1,4 +1,3 @@
-import Rebase from 're-base';
 import firebase from 'firebase';
 
 const firebaseConfig = {
@@ -11,7 +10,6 @@ const firebaseConfig = {
     appId: "1:24188334009:web:d0f04102116b969b279068"
   };
 
-const app = firebase.initializeApp(firebaseConfig);
-const base = Rebase.createClass(app.database())
+const base = firebase.initializeApp(firebaseConfig);
 
 export { base }
