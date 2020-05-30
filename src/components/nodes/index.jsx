@@ -51,8 +51,7 @@ class Nodes extends React.Component {
     super(props);
     this.state = {
       workFlow: {},
-      dataLoaded: false,
-      unAuthorizedWorkFlowFetch: false
+      dataLoaded: false
     };
   }
 
@@ -178,14 +177,33 @@ class Nodes extends React.Component {
     this.setState({[event.target.name]: event.target.value });
   };
 
+  shuffler = () => {
+    const workflow = this.state.workFlow;
+    for (let i = workflow.nodes.length - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i + 1));
+      [workflow.nodes[i], workflow.nodes[j]] = [workflow.nodes[j], workflow.nodes[i]];
+    }
+    this.setState({
+        workFlow: workflow
+    })
+  }
+
   render(){
     const {classes} = this.props;
     const {
         id,
-        nodes,
+        nodes = [],
         name,
         status
     } = this.state.workFlow;
+    let doNotAllowShuffle = false;
+    nodes.forEach((node) => {
+        if(!node.isComplete){
+            doNotAllowShuffle = true;
+            return
+        }
+    });
+
     return (
         <React.Fragment>
         <AppBar position="static" style={{background:"white"}}>
@@ -193,7 +211,7 @@ class Nodes extends React.Component {
                 <TextField 
                  id="outlined-basic" variant="outlined" label={name} type="text" onChange={this.handleChange} />
                 <div className={classes.nodeButtonsDiv}>
-                <Button disabled className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
+                <Button onClick={this.shuffler} disabled={doNotAllowShuffle} className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
                     <ShuffleRoundedIcon style={{marginRight: '5px'}} />
                     Shuffle
                 </Button>
