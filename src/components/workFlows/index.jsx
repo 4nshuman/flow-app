@@ -104,13 +104,32 @@ class WorkFlow extends React.Component {
       if(workFlow.id !== workFlowItem.id){
           return true;
       }
-  })
-  this.setState({
-    workFlows: workFlowList
-  });
-  base.database()
-    .ref(`workFlows/${this.props.currentUser.uID}`)
-    .set(workFlowList);
+    })
+    this.setState({
+      workFlows: workFlowList
+    });
+    base.database()
+      .ref(`workFlows/${this.props.currentUser.uID}`)
+      .set(workFlowList);
+  }
+
+  updateWorkFlow = (item) => () => {
+    const newWorkflowList = this.state.workFlows.map((workFlow) => {
+      if(item.id === workFlow.id){
+          return item;
+      }
+      else{
+          return workFlow;
+      }
+    })
+    this.setState({
+      workFlows: newWorkflowList
+    });
+    newWorkflowList.forEach((workFlow) => {
+      base.database()
+      .ref(`workFlows/${this.props.currentUser.uID}/${workFlow.id}`)
+      .set(workFlow);
+    })
   }
 
   render(){
@@ -136,6 +155,7 @@ class WorkFlow extends React.Component {
             this.state.workFlows.map((workflow) => (
               <WorkFlowItem
                 deleteClickHandler={this.deleteClickHandler}
+                updateWorkFlow={this.updateWorkFlow}
                 itemClickHandler={(e) => this.navigateToNodes(e, workflow.id)}
                 stateClickHandler={(e) => console.log(e.target.tagName)}
                 key = {workflow.id}

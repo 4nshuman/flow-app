@@ -73,7 +73,7 @@ class NodeItem extends React.Component {
     }
     this.setState({
       item: tmpItem
-    })
+    }, this.props.updateNodeData(this.state.item));
   }
 
   render(){

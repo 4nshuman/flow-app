@@ -45,9 +45,7 @@ class WorkFlowItem extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      isSignUpForm: false,
-      bottomText: "Don't have an account ? Sign up here.",
-      workFlowName: 'test',
+      item: this.props.item,
       shouldNotDisplayDelete: true
     }
   }
@@ -57,8 +55,35 @@ class WorkFlowItem extends React.Component {
   }
 
   handleChange = (event) => {
-    this.setState({[event.target.name]: event.target.value });
+    const tmp = this.state.item;
+    tmp[event.target.name]= event.target.value;
+    this.setState({
+      item: tmp
+    }, this.props.updateWorkFlow(this.state.item));
   };
+
+  stateHandler = () => {
+    const tmpItem = this.state.item;
+    if(!tmpItem.nodes){
+      return;
+    }
+    if(tmpItem.isComplete){
+      tmpItem.isComplete = false;
+    }else{
+      console.log({tmpItem})
+      let allowedToComplete = true;
+      tmpItem.nodes.forEach((node)=>{
+        if(!node.isComplete){
+          allowedToComplete = false;
+          return;
+        }
+      })
+      tmpItem.isComplete = allowedToComplete;
+    }
+    this.setState({
+      item: tmpItem
+    }, this.props.updateWorkFlow(this.state.item));
+  }
 
   render(){
     const {
@@ -78,14 +103,18 @@ class WorkFlowItem extends React.Component {
         <Box boxShadow={3}>
             <Card variant="outlined" onClick={itemClickHandler}>
                 <CardContent>
-                <TextField id="outlined-basic" variant="outlined" label={item.name} type="text" />
+                <TextField onChange={this.handleChange} name="name" id="outlined-basic" variant="outlined" label="Workflow Name" value={item.name} type="text" />
                 </CardContent>
                 <CardActions className={classes.bottomText}>
-                    <Typography className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
+                    <Typography
+                      style={{marginLeft: '10%', marginRight:'auto'}}
+                      className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
                         {item.isComplete ? 'Completed' : 'Pending'}
                     </Typography>
-                    <div onClick={stateClickHandler}>
-                    <CheckCircleIcon className={item.isComplete ? classes.statusIconComplete : classes.statusIconPending} />
+                    <div onClick={this.stateHandler}>
+                    <CheckCircleIcon
+                      style={{width: '50px', height: '50px', position: 'absolute', right: '10%', bottom: '10%'}}
+                      className={item.isComplete ? classes.statusIconComplete : classes.statusIconPending} />
                     </div>
                 </CardActions>
             </Card>

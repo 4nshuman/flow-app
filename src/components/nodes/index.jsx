@@ -134,11 +134,39 @@ class Nodes extends React.Component {
           }
       })
       const workFlow = this.state.workFlow;
+      if(!nodeItem.isComplete){
+          workFlow.isComplete = false;
+      }      
       workFlow.nodes = newNodesList;
-      this.setState({
+      this.setState({      
         workFlow: workFlow
       });
   }
+
+  deleteLatestNode = () => {
+      let latestNodeId = -1;
+      const newNodeList = [];
+      if((this.state.workFlow.nodes||[]).length < 1){
+          console.log('No Nodes Present');
+      }
+      else{
+        this.state.workFlow.nodes.forEach((node) => {
+            if(node.nodeId > latestNodeId){
+                latestNodeId = node.nodeId
+            }
+        });
+        this.state.workFlow.nodes.forEach((node) => {
+            if(node.nodeId !== latestNodeId){
+                newNodeList.push(node);
+            }
+        });
+      }
+      const workflow = this.state.workFlow;
+      workflow.nodes=newNodeList;
+      this.setState({
+          workFlow: workflow
+      })
+    }
 
   save = () => {
     base.database()
@@ -163,14 +191,13 @@ class Nodes extends React.Component {
         <AppBar position="static" style={{background:"white"}}>
             <Toolbar>
                 <TextField 
-                 value={this.state.unAuthorizedWorkFlowFetch ? 'UnAuthorized' : ''}
                  id="outlined-basic" variant="outlined" label={name} type="text" onChange={this.handleChange} />
                 <div className={classes.nodeButtonsDiv}>
-                <Button className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
+                <Button disabled className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
                     <ShuffleRoundedIcon style={{marginRight: '5px'}} />
                     Shuffle
                 </Button>
-                <Button className={classes.button} type='submit' variant="contained" style={{background: '#f80929'}}>
+                <Button onClick={this.deleteLatestNode} className={classes.button} type='submit' variant="contained" style={{background: '#f80929'}}>
                     <DeleteForeverRoundedIcon style={{marginRight: '5px'}} />
                     Delete
                 </Button>
