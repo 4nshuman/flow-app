@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import { withStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
+import {base} from '../../base';
 
 import LoginForm from './loginForm'
 import SignUpForm from './signUpForm'
 
-const useStyles = makeStyles({
+const styles = {
   root: {
     minWidth: 275,
     maxWidth: 400,
@@ -28,35 +29,62 @@ const useStyles = makeStyles({
   bottomText: {
     justifyContent: 'center'
   },
-});
+};
 
-export default function Entry() {
-  const classes = useStyles();
-  const [isSignUpForm, setIsSignUpForm] = useState(false);
-  const [bottomText, setBottomText] = useState("Don't have an account ? Sign up here.");
-
-  const changeFormType = () => {
-      setIsSignUpForm(!isSignUpForm);
-      isSignUpForm
-       ? setBottomText("Don't have an account ? Sign up here.")
-       : setBottomText('Existing user? Log in here.');
+class Entry extends React.Component {
+  constructor(props){
+    super(props);
+    this.state = {
+      isSignUpForm: false,
+      bottomText: "Don't have an account ? Sign up here.",
+      users:{}
+    }
   }
 
-  return (
-    <Box className={classes.root} boxShadow={3}>
-    <Card variant="outlined">
-      <CardContent>
-        <Typography className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
-          {isSignUpForm ? 'Sign Up' : 'Login'}
-        </Typography>
-        {isSignUpForm ? <SignUpForm/> : <LoginForm/>}
-      </CardContent>
-      <CardActions className={classes.bottomText}>
-        <Link href="#" onClick={changeFormType}>
-            {bottomText}
-        </Link>
-      </CardActions>
-    </Card>
-    </Box>
-  );
+  componentWillMount(){
+    this.usersRef = base.syncState('users',{
+      context: this,
+      state: 'users'
+    });
+  }
+
+  componentWillUnmount(){
+    base.removeBinding(this.usersRef);
+  }
+
+  changeFormType = () => {
+      this.setState({isSignUpForm: !this.state.isSignUpForm});
+      this.state.isSignUpForm
+       ? this.setState({setBottomText: "Don't have an account ? Sign up here."})
+       : this.setState({setBottomText: "Existing user? Log in here."});
+  }
+
+  signUp = (data) => {
+    this.setState(
+      {users: data}
+    );
+  }
+
+  render(){
+    const {classes} = this.props;
+    return (
+      <Box className={classes.root} boxShadow={3}>
+      <Card variant="outlined">
+        <CardContent>
+          <Typography className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
+            {this.state.isSignUpForm ? 'Sign Up' : 'Login'}
+          </Typography>
+          {this.state.isSignUpForm ? <SignUpForm signUp={this.signUp}/> : <LoginForm/>}
+        </CardContent>
+        <CardActions className={classes.bottomText}>
+          <Link href="#" onClick={this.changeFormType}>
+              {this.state.bottomText}
+          </Link>
+        </CardActions>
+      </Card>
+      </Box>
+    );
+  }
 }
+
+export default withStyles(styles)(Entry);

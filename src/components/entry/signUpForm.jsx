@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function SignUpForm() {
+export default function SignUpForm(props) {
   const classes = useStyles();
   const [state, setState] = React.useState({
       fName:'',
@@ -33,24 +33,31 @@ export default function SignUpForm() {
       passwordMissmatch: false,
   });
 
+  
+
   const handleChange = (event) => {
       setState({ ...state, [event.target.name]: event.target.value });
   };
 
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    props.signUp(state);
+  }
+
   return (
-    <form className={classes.root} autoComplete="off">
-        <TextField id="standard-basic" label="First name" type="text" name="fName" onChange={handleChange} />
-        <TextField id="standard-basic" label="Last name" type="text" name="lName" onChange={handleChange} />
-        <TextField id="standard-basic" label="Email Id" type="email" name="email" onChange={handleChange} />
-        <TextField id="standard-basic" label="Password" type="password" name="password" onChange={handleChange} />
-        <TextField id="standard-basic" label="Confirm Password" type="password" name="cPassword" onChange={handleChange} />
+    <form className={classes.root} autoComplete="off" onSubmit={handleSubmit}>
+        <TextField required id="standard-basic" label="First name" type="text" name="fName" onChange={handleChange} />
+        <TextField required id="standard-basic" label="Last name" type="text" name="lName" onChange={handleChange} />
+        <TextField required id="standard-basic" label="Email Id" type="email" name="email" onChange={handleChange} />
+        <TextField required id="standard-basic" label="Password" type="password" name="password" onChange={handleChange} />
+        <TextField required id="standard-basic" label="Confirm Password" type="password" name="cPassword" onChange={handleChange} />
         <Typography className={classes.title} variant='h1'>
           {
             state.cPassword!=='' &&
             (state.password !== state.cPassword ? 'Password missmatch' : '')
           }
         </Typography>
-        <Button type='submit' variant="contained" color="primary" className={classes.button}>
+        <Button disabled={state.password !== state.cPassword} type='submit' variant="contained" color="primary" className={classes.button}>
             Sign Up
         </Button>
     </form>

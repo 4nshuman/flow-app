@@ -3,9 +3,12 @@ import './App.css';
 import MyAppBar from './components/appBar';
 import Entry from './components/entry';
 import {BrowserRouter as Router, Switch, Route} from 'react-router-dom';
+import {Provider} from 'react-redux';
+import store from './redux/store';
 
 function App() {
   return (
+    <Provider store={store}>
     <div className="App">
       <MyAppBar/>
       <Router>
@@ -16,6 +19,7 @@ function App() {
         </Switch>
       </Router>
     </div>
+    </Provider>
   );
 }
 
