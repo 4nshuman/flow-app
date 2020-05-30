@@ -12,7 +12,7 @@ import SaveRoundedIcon from '@material-ui/icons/SaveRounded';
 import CancelRoundedIcon from '@material-ui/icons/CancelRounded';
 import {base} from '../../base';
 import {connect} from 'react-redux';
-import {userLoggedIn, userLoggedOut} from '../../redux/currentUser/actions';
+import {userLoggedIn, userLoggedOut} from '../../redux/actions';
 import NodeItem from '../nodeItem';
 import Box from '@material-ui/core/Box';
 import Card from '@material-ui/core/Card';

@@ -8,7 +8,7 @@ import FilterListRoundedIcon from '@material-ui/icons/FilterListRounded';
 import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRounded';
 
 import {connect} from 'react-redux';
-import {userLoggedIn} from '../../redux/currentUser/actions';
+import {userLoggedIn, workFlowsAdded} from '../../redux/actions';
 import WorkFlowItem from '../workFlowItem';
 import {base} from '../../base';
 
@@ -59,20 +59,31 @@ class WorkFlow extends React.Component {
     this.setState({
       workFlows: temp,
       dataLoaded: true
-    });   
+    }, this.props.workFlowsAdded(temp));   
   }
 
   setError = (errorObject) => {
     console.log("The read failed: " + errorObject.code);
   }
 
-  handleFilter = () =>{
-      console.log('handle Filter')
+  handleFilterChange = (event) =>{
+    if(event.target.value==''){
+      this.setState({
+        workFlows: this.props.workFlows
+      })
+    }
+    else{
+      const filteredList = [];
+      this.props.workFlows.forEach((workFlow) => {
+        if(workFlow.name.toLowerCase().includes(event.target.value.toLowerCase())){
+          filteredList.push(workFlow);
+        }
+      });
+      this.setState({
+        workFlows: filteredList
+      });
+    }
   }
-
-  handleChange = (event) => {
-    this.setState({[event.target.name]: event.target.value });
-  };
 
   addWorkFlow = () =>{
     const workFlows = this.state.workFlows;
@@ -94,7 +105,7 @@ class WorkFlow extends React.Component {
   }
 
   navigateToNodes = (event, id) => {
-    if(event.target.tagName!='svg' && event.target.tagName!='path' && event.target.tagName!='INPUT'){
+    if(event.target.tagName!=='svg' && event.target.tagName!=='path' && event.target.tagName!=='INPUT'){
       window.location = `/workflow/${id}`;
     }
   }
@@ -138,8 +149,8 @@ class WorkFlow extends React.Component {
         <React.Fragment>
         <AppBar position="static" style={{background:"white"}}>
             <Toolbar>
-                <TextField className={classes.filterFields} required id="outlined-basic" variant="outlined" label="Search Workflows" type="email" name='email' onChange={this.handleChange} />
-                <Button style={{marginLeft: '25px'}} type='submit' variant="contained" color="primary">
+                <TextField className={classes.filterFields} required id="outlined-basic" variant="outlined" label="Search Workflows" type="email" name='searchTerm' onChange={this.handleFilterChange} />
+                <Button  style={{marginLeft: '25px'}} type='submit' variant="contained" color="primary" >
                     <FilterListRoundedIcon style={{marginRight: '5px'}} />
                     Filter
                 </Button>
@@ -174,13 +185,15 @@ class WorkFlow extends React.Component {
 
 const mapStateToProps = state => {
   return {
-      currentUser: state.currentUser
+      currentUser: state.currentUser,
+      workFlows: state.workFlows
   }
 };
 
 const mapDispatchToProps = dispatch => {
   return {
-      userLoggedIn: (user) => {dispatch(userLoggedIn(user))}
+      userLoggedIn: (user) => {dispatch(userLoggedIn(user))},
+      workFlowsAdded: (workFlows) => {dispatch(workFlowsAdded(workFlows))}
   }
 };
 

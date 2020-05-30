@@ -10,7 +10,7 @@ import Badge from '@material-ui/core/Badge';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 import {connect} from 'react-redux';
-import {userLoggedIn} from '../../redux/currentUser/actions';
+import {userLoggedIn} from '../../redux/actions';
 import Status from './statusButton';
 
 const styles = {

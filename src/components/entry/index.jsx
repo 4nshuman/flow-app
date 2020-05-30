@@ -9,7 +9,7 @@ import Link from '@material-ui/core/Link';
 import firebase from 'firebase';
 import {base} from '../../base';
 import {connect} from 'react-redux';
-import {userLoggedIn} from '../../redux/currentUser/actions';
+import {userLoggedIn} from '../../redux/actions';
 
 import LoginForm from './loginForm';
 import SignUpForm from './signUpForm';

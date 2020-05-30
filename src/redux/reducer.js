@@ -1,7 +1,8 @@
 import * as actions from './actionTypes';
 
 const initialState = {
-    currentUser: null
+    currentUser: null,
+    workFlows: null
 }
 
 export default function reducer(state = initialState, action){
@@ -19,6 +20,11 @@ export default function reducer(state = initialState, action){
             return {
                 ...state,
                 currentUser: null
+            };
+        case actions.WORK_FLOWS_ADDED:
+            return {
+                ...state,
+                workFlows: action.payload.workFlows
             };
         default:
             return state;

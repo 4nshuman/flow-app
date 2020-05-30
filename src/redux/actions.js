@@ -12,3 +12,11 @@ export const userLoggedIn = user => ({
 export const userLoggedOut = () => ({
     type: actions.USER_LOGGED_OUT
 });
+
+export const workFlowsAdded = workFlows => {
+    return ({
+    type: actions.WORK_FLOWS_ADDED,
+    payload: {
+        workFlows: workFlows 
+    }});
+}

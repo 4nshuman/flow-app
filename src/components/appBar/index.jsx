@@ -9,7 +9,7 @@ import './myAppBar.css';
 
 import {base} from '../../base';
 import {connect} from 'react-redux';
-import {userLoggedOut} from '../../redux/currentUser/actions';
+import {userLoggedOut} from '../../redux/actions';
 
 class MyAppBar extends React.Component{
     constructor(props){
