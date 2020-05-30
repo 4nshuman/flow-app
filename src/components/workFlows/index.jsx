@@ -9,7 +9,8 @@ import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRoun
 
 import {connect} from 'react-redux';
 import {userLoggedIn} from '../../redux/currentUser/actions';
-import WorkFlowItem from '../workFlowItems';
+import WorkFlowItem from '../workFlowItem';
+import {base} from '../../base';
 
 const styles = {
     root:{
@@ -98,7 +99,8 @@ class WorkFlow extends React.Component {
         }
       ],
       shouldNotDisplayDelete: true
-    }
+    };
+    this.firestore = base.database().ref('workFlows');
   }
 
   handleFilter = () =>{
@@ -109,7 +111,32 @@ class WorkFlow extends React.Component {
     this.setState({[event.target.name]: event.target.value });
   };
 
+  addWorkFlow = () =>{
+    const workFlows = this.state.workflows;
+    const id = workFlows.length+1;
+    this.setState({
+      workFlows: workFlows.push(
+        {
+          id: id,
+          name: `New WorkFlow : ${id}`,
+          isComplete: false,
+          nodes: []
+        }
+      )
+    });
+    //const workflowRef = this.firestore.push();
+    this.firestore.set(this.state.workflows)
+  }
+
+  navigateToNodes = (event, id) => {
+    console.log(event, id)
+    if(event.target.tagName!='svg' && event.target.tagName!='path'){
+      window.open(`/workflow/${id}`);
+    }
+  }
+
   render(){
+    console.log(this.state)
     const {classes} = this.props;
     return (
         <React.Fragment>
@@ -120,7 +147,7 @@ class WorkFlow extends React.Component {
                     <FilterListRoundedIcon style={{marginRight: '5px'}} />
                     Filter
                 </Button>
-                <Button className={classes.addButton} type='submit' variant="contained">
+                <Button onClick={this.addWorkFlow} className={classes.addButton} type='submit' variant="contained">
                     <AddCircleOutlineRoundedIcon style={{marginRight: '5px'}} />
                     Add Workflow
                 </Button>
@@ -131,7 +158,7 @@ class WorkFlow extends React.Component {
             this.state.workflows.map((workflow) => (
               <WorkFlowItem
                 deleteClickHandler={() => alert('workflow was to be deleted')}
-                itemClickHandler={(e) => console.log(e.target.tagName)}
+                itemClickHandler={(e) => this.navigateToNodes(e, workflow.id)}
                 stateClickHandler={(e) => console.log(e.target.tagName)}
                 key = {workflow.id}
                 item = {workflow}
