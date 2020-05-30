@@ -38,69 +38,33 @@ class WorkFlow extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      isSignUpForm: false,
-      bottomText: "Don't have an account ? Sign up here.",
-      workflows:[
-        {
-          id: 1,
-          name: 'WorkFlow 1',
-          isComplete: false,
-          nodes: [
-            {
-              nodeId: 1,
-              taskName: 'Task1',
-              description: 'some description is here',
-              isComplete: false,
-              inProgress: true
-            },
-            {
-              nodeId: 2,
-              taskName: 'Task2',
-              description: 'some description is here',
-              isComplete: true,
-              inProgress: false
-            },
-            {
-              nodeId: 3,
-              taskName: 'Task3',
-              description: 'some description is here',
-              isComplete: false,
-              inProgress: false
-            }
-          ]
-        },
-        {
-          id: 2,
-          name: 'WorkFlow 2',
-          isComplete: true,
-          nodes: [
-            {
-              nodeId: 1,
-              taskName: 'Task1',
-              description: 'some description is here',
-              isComplete: true,
-              inProgress: false
-            },
-            {
-              nodeId: 2,
-              taskName: 'Task2',
-              description: 'some description is here',
-              isComplete: true,
-              inProgress: false
-            },
-            {
-              nodeId: 3,
-              taskName: 'Task3',
-              description: 'some description is here',
-              isComplete: true,
-              inProgress: false
-            }
-          ]
-        }
-      ],
-      shouldNotDisplayDelete: true
+      dataLoaded: false,
+      shouldNotDisplayDelete: true,
+      workFlows: []
     };
     this.firestore = base.database().ref('workFlows');
+  }
+
+  componentDidMount(){
+    this.firestore.on("value", this.setData, this.setError);
+  }
+
+  setData = (snapshot) => {
+    const temp = [];
+    snapshot.forEach((snap) => {
+        if(snap.val().owner === this.props.currentUser.uID){
+          console.log('test');
+          temp.push(snap.val());
+        }
+    });
+    this.setState({
+      workFlows: temp,
+      dataLoaded: true
+    });   
+  }
+
+  setError = (errorObject) => {
+    console.log("The read failed: " + errorObject.code);
   }
 
   handleFilter = () =>{
@@ -118,6 +82,7 @@ class WorkFlow extends React.Component {
       workFlows: workFlows.push(
         {
           id: id,
+          owner: this.props.currentUser.uID,
           name: `New WorkFlow : ${id}`,
           isComplete: false,
           nodes: []
@@ -129,8 +94,7 @@ class WorkFlow extends React.Component {
   }
 
   navigateToNodes = (event, id) => {
-    console.log(event, id)
-    if(event.target.tagName!='svg' && event.target.tagName!='path'){
+    if(event.target.tagName!='svg' && event.target.tagName!='path' && event.target.tagName!='INPUT'){
       window.open(`/workflow/${id}`);
     }
   }
@@ -155,7 +119,8 @@ class WorkFlow extends React.Component {
         </AppBar>
         <div>
           {
-            this.state.workflows.map((workflow) => (
+            this.state.dataLoaded ?
+            this.state.workFlows.map((workflow) => (
               <WorkFlowItem
                 deleteClickHandler={() => alert('workflow was to be deleted')}
                 itemClickHandler={(e) => this.navigateToNodes(e, workflow.id)}
@@ -164,6 +129,8 @@ class WorkFlow extends React.Component {
                 item = {workflow}
               />
             ))
+            :
+            <div>Loading...</div>
           }
         </div>
         </React.Fragment>

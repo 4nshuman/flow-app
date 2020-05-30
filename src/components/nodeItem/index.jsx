@@ -43,10 +43,7 @@ class NodeItem extends React.Component {
   constructor(props){
     super(props);
     this.state = {
-      isSignUpForm: false,
-      bottomText: "Don't have an account ? Sign up here.",
-      workFlowName: 'test',
-      shouldNotDisplayDelete: true
+      item: this.props.item,
     }
   }
 
@@ -55,35 +52,37 @@ class NodeItem extends React.Component {
   }
 
   handleChange = (event) => {
-    this.setState({[event.target.name]: event.target.value });
+    const tmp = this.state.item;
+    tmp[event.target.name] = event.target.value;
+    this.setState({ 
+      item: tmp
+    });
   };
 
   render(){
     const {
       classes,
-      item,
-      deleteClickHandler,
-      itemClickHandler,
       stateClickHandler
     } = this.props;
+    const item = this.state.item;
+
     const statusColor = item.isComplete ? "#17ba51" : item.inProgress ? "#3d86f9" : "#bcbcbc"
 
     return (
         <Badge 
         style={{color: statusColor}}
-        className={classes.root} badgeContent={<Status clickHandler={deleteClickHandler}/>}>
+        className={classes.root} badgeContent={<Status clickHandler={stateClickHandler}/>}>
         <Box boxShadow={3}>
-            <Card variant="outlined" onClick={itemClickHandler}>
+            <Card variant="outlined">
                 <CardContent>
-                <TextField id="outlined-basic" variant="outlined" label={item.name} type="text" />
+                <TextField name="taskName" id="outlined-basic" variant="outlined" label="Task Name" value={item.taskName} type="text" onChange={this.handleChange}/>
                 </CardContent>
                 <CardActions className={classes.bottomText}>
                     <Typography className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
-                        {item.isComplete ? 'Completed' : 'Pending'}
+                    <TextField 
+                    multiline={true} rows={10}
+                    name="description" id="outlined-basic" variant="outlined" label="Task description" type="text" value={item.description} onChange={this.handleChange}/>
                     </Typography>
-                    <div onClick={stateClickHandler}>
-                    <CheckCircleIcon className={item.isComplete ? classes.statusIconComplete : classes.statusIconPending} />
-                    </div>
                 </CardActions>
             </Card>
         </Box>

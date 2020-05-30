@@ -9,10 +9,15 @@ import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRoun
 import ShuffleRoundedIcon from '@material-ui/icons/ShuffleRounded';
 import DeleteForeverRoundedIcon from '@material-ui/icons/DeleteForeverRounded';
 import SaveRoundedIcon from '@material-ui/icons/SaveRounded';
+import CancelRoundedIcon from '@material-ui/icons/CancelRounded';
 import {base} from '../../base';
 import {connect} from 'react-redux';
 import {userLoggedIn} from '../../redux/currentUser/actions';
 import NodeItem from '../nodeItem';
+import Box from '@material-ui/core/Box';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
 
 const styles = {
     root:{
@@ -46,7 +51,8 @@ class Nodes extends React.Component {
     super(props);
     this.state = {
       workFlow: {},
-      dataLoaded: false
+      dataLoaded: false,
+      unAuthorizedWorkFlowFetch: false
     };
     this.firestore = base.database().ref('workFlows');
   }
@@ -57,21 +63,30 @@ class Nodes extends React.Component {
   }
 
   setData = (snapshot) => {
+    let invalidAuth = false
     snapshot.forEach((snap) => {
         if(snap.val().id === parseInt(this.props.match.params.id)){
-            this.setState({
-                workFlow:{
-                    id: snap.val().id,
-                    status: snap.val().isComplete,
-                    nodes: snap.val().nodes || [],
-                    name: snap.val().name,
-                }
-            })
+            if(snap.val().owner === this.props.currentUser.uID){
+                this.setState({
+                    workFlow:{
+                        id: snap.val().id,
+                        status: snap.val().isComplete,
+                        nodes: snap.val().nodes || [],
+                        name: snap.val().name,
+                        owner: snap.val().owner
+                    }
+                })
+                invalidAuth = false
+            }
+            else{
+                invalidAuth = true
+            }
         }
     })
     this.setState({
-        dataLoaded: true
-    });   
+        dataLoaded: !invalidAuth,
+        unAuthorizedWorkFlowFetch: invalidAuth
+    })
   }
 
   setError = (errorObject) => {
@@ -108,7 +123,9 @@ class Nodes extends React.Component {
         <React.Fragment>
         <AppBar position="static" style={{background:"white"}}>
             <Toolbar>
-                <TextField className={classes.filterFields} required id="outlined-basic" variant="outlined" label={name} type="email" name='email' onChange={this.handleChange} />
+                <TextField 
+                 value={this.state.unAuthorizedWorkFlowFetch ? 'UnAuthorized' : ''}
+                 id="outlined-basic" variant="outlined" label={name} type="text" onChange={this.handleChange} />
                 <div className={classes.nodeButtonsDiv}>
                 <Button className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
                     <ShuffleRoundedIcon style={{marginRight: '5px'}} />
@@ -141,8 +158,24 @@ class Nodes extends React.Component {
                 item = {node}
               />
             ))
-            : 
-            <div className={classes.loader}>
+            : this.state.unAuthorizedWorkFlowFetch 
+            ? <Box
+                className={classes.root}
+                style={{width: '500px', marginLeft:'30vw'}}
+                boxShadow={3}>
+                    <Card variant="outlined">
+                        <CardContent>
+                        <TextField fullWidth={true} id="outlined-basic" variant="outlined" label="Error" value="UnAuthorized to view this Flow" type="text"/>
+                        </CardContent>
+                        <CardActions className={classes.bottomText}>
+                            <Button variant="contained">
+                                <CancelRoundedIcon style={{marginRight: '5px'}} />
+                                Close
+                            </Button>
+                        </CardActions>
+                    </Card>
+                </Box>  
+            : <div className={classes.loader}>
                 <h1>Loading...</h1><br/>
                 <CircularProgress />
             </div>
