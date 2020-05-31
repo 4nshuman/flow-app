@@ -208,7 +208,7 @@ class WorkFlow extends React.Component {
             ))
               :
               <div className={classes.loader}>
-                <hr/><h3>No Workflows Present. Add some workflows.</h3><hr/>
+                <hr/><h3>No Workflows Present.</h3><hr/>
               </div>
             )
             :

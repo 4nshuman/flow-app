@@ -7,6 +7,9 @@ import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Typography from '@material-ui/core/Typography';
 import Badge from '@material-ui/core/Badge';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 import {connect} from 'react-redux';
@@ -65,6 +68,10 @@ class WorkFlowItem extends React.Component {
   stateHandler = () => {
     const tmpItem = this.state.item;
     if(!tmpItem.nodes){
+      this.setState({
+        shouldDisplaySnackbar: true,
+        notification: 'The workflow is empty and cannot be marked complete.'
+      });
       return;
     }
     if(tmpItem.isComplete){
@@ -74,6 +81,10 @@ class WorkFlowItem extends React.Component {
       tmpItem.nodes.forEach((node)=>{
         if(!node.isComplete){
           allowedToComplete = false;
+          this.setState({
+            shouldDisplaySnackbar: true,
+            notification: 'The workflow has one or more items pending.'
+          })
           return;
         }
       })
@@ -82,6 +93,12 @@ class WorkFlowItem extends React.Component {
     this.setState({
       item: tmpItem
     }, this.props.updateWorkFlow(this.state.item));
+  }
+
+  handleClose = () => {
+    this.setState({
+      shouldDisplaySnackbar: false
+    })
   }
 
   render(){
@@ -93,6 +110,7 @@ class WorkFlowItem extends React.Component {
     } = this.props;
 
     return (
+      <React.Fragment>
         <StyledBadge 
         invisible={this.state.shouldNotDisplayDelete}
         onMouseEnter={() => this.setState({shouldNotDisplayDelete:false})}
@@ -118,6 +136,22 @@ class WorkFlowItem extends React.Component {
             </Card>
         </Box>
         </StyledBadge>
+        <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        open={this.state.shouldDisplaySnackbar}
+        autoHideDuration={3000}
+        onClose={this.handleClose}
+        message={this.state.notification}
+        action={
+            <IconButton size="small" aria-label="close" color="inherit" onClick={this.handleClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+        }
+        />
+      </React.Fragment>
     );
   }
 }

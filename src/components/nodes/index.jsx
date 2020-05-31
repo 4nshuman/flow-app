@@ -250,24 +250,30 @@ class Nodes extends React.Component {
           {
             this.state.dataLoaded ?
             (
-            nodes.length>0 ?
-            nodes.map((node) => (
-              <NodeItem
-                updateNodeData={this.updateNodeData}
-                key = {node.nodeId}
-                item = {node}
-              />
-            ))
-            : 
-            <div className={classes.loader}>
-                <hr/><h3>No Nodes Present. Add some nodes to the workflow.</h3><hr/>
-            </div>
+              nodes.length>0 ?
+              (
+                nodes.map((node) => (
+                  <NodeItem
+                    updateNodeData={this.updateNodeData}
+                    key = {node.nodeId}
+                    item = {node}
+                  />
+                ))
+              )
+              :
+              ( 
+                <div className={classes.loader}>
+                    <hr/><h3>No Nodes Present. Add some nodes to the workflow.</h3><hr/>
+                </div>
+              )
             )
             :
-            <div className={classes.loader}>
-                <h1>Loading Nodes...</h1><br/>
-                <CircularProgress />
-            </div>
+            (
+              <div className={classes.loader}>
+                  <h1>Loading Nodes...</h1><br/>
+                  <CircularProgress />
+              </div>
+            )
           }
         </div>
         <Snackbar
@@ -276,15 +282,13 @@ class Nodes extends React.Component {
             horizontal: 'right',
           }}
           open={this.state.shouldDisplaySnackbar}
-          autoHideDuration={5000}
+          autoHideDuration={3000}
           onClose={this.handleClose}
           message={this.state.notification}
           action={
-            <React.Fragment>
               <IconButton size="small" aria-label="close" color="inherit" onClick={this.handleClose}>
                 <CloseIcon fontSize="small" />
               </IconButton>
-            </React.Fragment>
           }
         />
         </React.Fragment>
