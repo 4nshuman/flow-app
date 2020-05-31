@@ -11,6 +11,9 @@ import Dropdown from 'react-bootstrap/Dropdown'
 import {connect} from 'react-redux';
 import {userLoggedIn, workFlowsAdded} from '../../redux/actions';
 import WorkFlowItem from '../workFlowItem';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 import {base} from '../../base';
 
 const styles = {
@@ -87,6 +90,10 @@ class WorkFlow extends React.Component {
     base.database()
     .ref(`workFlows/${this.props.currentUser.uID}/${id}`)
     .set(newWorkFlow)
+    this.setState({
+      shouldDisplaySnackbar: true,
+      notification: 'New workflow has been added.'
+    })
   }
 
   navigateToNodes = (event, id) => {
@@ -105,6 +112,10 @@ class WorkFlow extends React.Component {
     base.database()
     .ref(`workFlows/${this.props.currentUser.uID}/${workFlowItem.id}`)
     .remove();
+    this.setState({
+      shouldDisplaySnackbar: true,
+      notification: 'The workflow has been deleted.'
+    })
   }
 
   updateWorkFlow = (item) => () => {
@@ -174,6 +185,12 @@ class WorkFlow extends React.Component {
     }
   }
 
+  handleClose = () => {
+    this.setState({
+      shouldDisplaySnackbar: false
+    })
+  }
+
   render(){
     const {classes} = this.props;
     return (
@@ -220,6 +237,21 @@ class WorkFlow extends React.Component {
             )
           }
         </div>
+        <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        open={this.state.shouldDisplaySnackbar}
+        autoHideDuration={5000}
+        onClose={this.handleClose}
+        message={this.state.notification}
+        action={
+            <IconButton size="small" aria-label="close" color="inherit" onClick={this.handleClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+        }
+        />
         </React.Fragment>
     );
   }
