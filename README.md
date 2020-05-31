@@ -1,5 +1,8 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## NOTE :
+  The application's start command has been tweaked for deployment on server, please either use ### `react-scripts start` or edit the ### `package.json` to suit your build needs.
+
 ## Available Scripts
 
 In the project directory, you can run:
