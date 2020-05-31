@@ -95,7 +95,6 @@ class Nodes extends React.Component {
             }
             else{
               this.props.userLoggedOut();
-              alert('user not logged in');
               window.location = '/'
             }
         });
