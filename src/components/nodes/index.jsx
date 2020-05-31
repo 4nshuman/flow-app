@@ -281,7 +281,7 @@ class Nodes extends React.Component {
             horizontal: 'right',
           }}
           open={this.state.shouldDisplaySnackbar}
-          autoHideDuration={3000}
+          autoHideDuration={5000}
           onClose={this.handleClose}
           message={this.state.notification}
           action={
