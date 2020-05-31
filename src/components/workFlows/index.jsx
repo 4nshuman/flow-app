@@ -4,9 +4,10 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import FilterListRoundedIcon from '@material-ui/icons/FilterListRounded';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRounded';
-
+import DropdownButton from 'react-bootstrap/DropdownButton'
+import Dropdown from 'react-bootstrap/Dropdown'
 import {connect} from 'react-redux';
 import {userLoggedIn, workFlowsAdded} from '../../redux/actions';
 import WorkFlowItem from '../workFlowItem';
@@ -31,6 +32,9 @@ const styles = {
     },
     bottomText:{
         justifyContent: 'center'
+    },
+    loader:{
+      marginTop: '5%'
     }
 };
 
@@ -66,25 +70,6 @@ class WorkFlow extends React.Component {
     console.log("The read failed: " + errorObject.code);
   }
 
-  handleFilterChange = (event) =>{
-    if(event.target.value==''){
-      this.setState({
-        workFlows: this.props.workFlows
-      })
-    }
-    else{
-      const filteredList = [];
-      this.props.workFlows.forEach((workFlow) => {
-        if(workFlow.name.toLowerCase().includes(event.target.value.toLowerCase())){
-          filteredList.push(workFlow);
-        }
-      });
-      this.setState({
-        workFlows: filteredList
-      });
-    }
-  }
-
   addWorkFlow = () =>{
     const workFlows = this.state.workFlows;
     const id = Date.now();
@@ -111,21 +96,19 @@ class WorkFlow extends React.Component {
   }
 
   deleteClickHandler = (workFlowItem) => () => {
-    const workFlowList = this.state.workFlows.filter((workFlow) => {
-      if(workFlow.id !== workFlowItem.id){
-          return true;
-      }
-    })
+    const workFlowList = this.props.workFlows.filter((workFlow) => (
+      workFlow.id !== workFlowItem.id
+    ));
     this.setState({
       workFlows: workFlowList
-    });
+    }, this.props.workFlowsAdded(workFlowList));
     base.database()
-      .ref(`workFlows/${this.props.currentUser.uID}`)
-      .set(workFlowList);
+    .ref(`workFlows/${this.props.currentUser.uID}/${workFlowItem.id}`)
+    .remove();
   }
 
   updateWorkFlow = (item) => () => {
-    const newWorkflowList = this.state.workFlows.map((workFlow) => {
+    const newWorkflowList = this.props.workFlows.map((workFlow) => {
       if(item.id === workFlow.id){
           return item;
       }
@@ -135,12 +118,60 @@ class WorkFlow extends React.Component {
     })
     this.setState({
       workFlows: newWorkflowList
-    });
+    }, this.props.workFlowsAdded(newWorkflowList));
     newWorkflowList.forEach((workFlow) => {
       base.database()
       .ref(`workFlows/${this.props.currentUser.uID}/${workFlow.id}`)
       .set(workFlow);
     })
+  }
+
+  filter = (event) =>{
+    if(event.target.name === 'searchTerm'){
+      if(event.target.value === ''){
+        this.setState({
+          workFlows: this.props.workFlows
+        })
+      }
+      else{
+        const filteredList = [];
+        this.props.workFlows.forEach((workFlow) => {
+          if(workFlow.name.toLowerCase().includes(event.target.value.toLowerCase())){
+            filteredList.push(workFlow);
+          }
+        });
+        this.setState({
+          workFlows: filteredList
+        });
+      }
+    }else{
+      const filteredList = [];
+      switch(event.target.name){
+        case 'completed':
+          this.props.workFlows.forEach((workFlow) => {
+            console.log('test')
+            if(workFlow.isComplete){
+              filteredList.push(workFlow);
+            }
+          });
+          break;
+        case 'pending':
+          this.props.workFlows.forEach((workFlow) => {
+            if(!workFlow.isComplete){
+              filteredList.push(workFlow);
+            }
+          });
+          break;
+        default:
+          this.props.workFlows.forEach((workFlow) => {
+            filteredList.push(workFlow);
+          });
+          break;
+      }
+      this.setState({
+        workFlows: filteredList
+      });
+    }
   }
 
   render(){
@@ -149,11 +180,12 @@ class WorkFlow extends React.Component {
         <React.Fragment>
         <AppBar position="static" style={{background:"white"}}>
             <Toolbar>
-                <TextField className={classes.filterFields} required id="outlined-basic" variant="outlined" label="Search Workflows" type="email" name='searchTerm' onChange={this.handleFilterChange} />
-                <Button  style={{marginLeft: '25px'}} type='submit' variant="contained" color="primary" >
-                    <FilterListRoundedIcon style={{marginRight: '5px'}} />
-                    Filter
-                </Button>
+                <TextField className={classes.filterFields} required id="outlined-basic" variant="outlined" label="Search Workflows" type="email" name="searchTerm" onChange={this.filter} />
+                <DropdownButton style={{marginLeft: '3%'}} id="dropdown-basic-button" title="Filter">
+                  <Dropdown.Item name='all' value="all" onClick={this.filter}>All</Dropdown.Item>
+                  <Dropdown.Item name='completed' value="completed" onClick={this.filter}>Completed</Dropdown.Item>
+                  <Dropdown.Item name='pending' value="pending" onClick={this.filter}>Pending</Dropdown.Item>
+                </DropdownButton>
                 <Button onClick={this.addWorkFlow} className={classes.addButton} type='submit' variant="contained">
                     <AddCircleOutlineRoundedIcon style={{marginRight: '5px'}} />
                     Add Workflow
@@ -162,7 +194,8 @@ class WorkFlow extends React.Component {
         </AppBar>
         <div>
           {
-            this.state.dataLoaded ?
+            this.state.dataLoaded ? 
+            ( (this.state.workFlows.length>0) ?
             this.state.workFlows.map((workflow) => (
               <WorkFlowItem
                 deleteClickHandler={this.deleteClickHandler}
@@ -173,8 +206,18 @@ class WorkFlow extends React.Component {
                 item = {workflow}
               />
             ))
+              :
+              <div className={classes.loader}>
+                <hr/><h3>No Workflows Present. Add some workflows.</h3><hr/>
+              </div>
+            )
             :
-            <div>Loading...</div>
+            (
+              <div className={classes.loader}>
+                <h1>Loading WorkFlows...</h1><br/>
+                <CircularProgress />
+              </div>
+            )
           }
         </div>
         </React.Fragment>

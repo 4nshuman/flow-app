@@ -3,6 +3,7 @@ import { withStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import Link from '@material-ui/core/Link';
@@ -28,11 +29,14 @@ const styles = {
     transform: 'scale(0.8)',
   },
   title: {
-    fontSize: 16,
+    fontSize: 20,
   },
   bottomText: {
     justifyContent: 'center'
   },
+  loader:{
+    marginTop: '5%'
+  }
 };
 
 class Entry extends React.Component {
@@ -41,7 +45,8 @@ class Entry extends React.Component {
     this.state = {
       isSignUpForm: false,
       bottomText: "Don't have an account ? Sign up here.",
-      currentUser:{}
+      currentUser:{},
+      authLoaded: false
     }
   }
   
@@ -52,11 +57,12 @@ class Entry extends React.Component {
   authListener = () => {
     base.auth().onAuthStateChanged((user)=>{
       if(user){
-        this.setState({currentUser: user})
-        this.props.userLoggedIn(user);
+        this.setState({
+          currentUser: user, authLoaded: true
+        }, this.props.userLoggedIn(user))
       }
       else{
-        this.setState({currentUser: null})
+        this.setState({currentUser: null, authLoaded: true})
       }
     });
   }
@@ -77,6 +83,7 @@ class Entry extends React.Component {
   }
 
   logIn = (data) => {
+    this.setState({authLoaded: false})
     let persistence = firebase.auth.Auth.Persistence.SESSION
     if(data.remember){
       persistence = firebase.auth.Auth.Persistence.LOCAL
@@ -86,7 +93,7 @@ class Entry extends React.Component {
       base.auth().signInWithEmailAndPassword(data.email, data.password).then((u)=>{
         this.setState({currentUser: u});
       }).catch((error)=>{
-        console.log(error);
+        this.setState({authLoaded: true, logInError: error.message});
       })
     );
   }
@@ -94,25 +101,34 @@ class Entry extends React.Component {
   render(){
     const {classes} = this.props;
     return (
-      <div>
-        {!!this.props.currentUser ? <WorkFlow/> : 
-      <Box className={classes.root} boxShadow={3}>
-      <Card variant="outlined">
-        <CardContent>
-          <Typography className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
-            {this.state.isSignUpForm ? 'Sign Up' : 'Login'}
-          </Typography>
-          {this.state.isSignUpForm ? <SignUpForm signUp={this.signUp}/> : <LoginForm logIn={this.logIn}/>}
-        </CardContent>
-        <CardActions className={classes.bottomText}>
-          <Link href="#" onClick={this.changeFormType}>
-              {this.state.bottomText}
-          </Link>
-        </CardActions>
-      </Card>
-      </Box>
-      }
-      </div>
+      <React.Fragment>
+        { this.state.authLoaded ?
+        (<div>
+          {!!this.props.currentUser ? <WorkFlow/> : 
+        <Box className={classes.root} boxShadow={3}>
+        <Card variant="outlined">
+          <CardContent>
+            <Typography className={classes.title} variant='h6' component="h2" color="textSecondary" gutterBottom>
+              {this.state.isSignUpForm ? 'Sign Up' : 'Login'}
+            </Typography>
+            {this.state.isSignUpForm ? <SignUpForm signUp={this.signUp}/> : <LoginForm logIn={this.logIn} error={this.state.logInError}/>}
+          </CardContent>
+          <CardActions className={classes.bottomText}>
+            <Link href="#" onClick={this.changeFormType}>
+                {this.state.bottomText}
+            </Link>
+          </CardActions>
+        </Card>
+        </Box>
+        }
+        </div>)
+        :
+        (<div className={classes.loader}>
+              <h1>Please Wait...</h1><br/>
+              <CircularProgress />
+          </div>)
+        }
+      </React.Fragment>
     );
   }
 }

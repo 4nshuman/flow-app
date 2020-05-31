@@ -12,10 +12,6 @@ import {connect} from 'react-redux';
 import {userLoggedOut} from '../../redux/actions';
 
 class MyAppBar extends React.Component{
-    constructor(props){
-        super(props);
-    }
-
     handleLogOutRequest = () => {
         base.auth().signOut();
         this.props.userLoggedOut();
@@ -32,6 +28,10 @@ class MyAppBar extends React.Component{
                         FLOW APP
                     </Typography>
                     <div className="login-button">
+                    {
+                        window.location.pathname.includes('/workflow/') &&
+                        (<Button style={{marginRight: '15px'}} variant="contained" onClick={() => {window.location='/'}} >Home</Button>)
+                    }
                     {
                         !!this.props.currentUser &&
                         (<Button variant="contained" onClick={this.handleLogOutRequest} >Log Out</Button>)

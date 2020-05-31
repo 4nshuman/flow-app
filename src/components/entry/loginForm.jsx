@@ -38,23 +38,26 @@ export default function LoginForm(props) {
   }
 
   return (
-    <form className={classes.root} autoComplete="off" onSubmit={handleSubmit}>
-      <TextField required id="standard-basic" label="Email Id" type="email" name='email' onChange={handleChange} />
-      <TextField required id="standard-basic" label="Password" type="password" name='password' onChange={handleChange} />
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={state.remember}
-            onChange={handleChange}
-            name="remember"
-            color="primary"
-          />
-        }
-        label="Remember me"
-      />
-      <Button type='submit' variant="contained" color="primary">
-        Log In
-      </Button>
-    </form>
+    <React.Fragment>
+      <span style={{fontSize: '12px', color: 'red'}}>{props.error}</span>
+      <form className={classes.root} autoComplete="off" onSubmit={handleSubmit}>
+        <TextField required id="standard-basic" label="Email Id" type="email" name='email' onChange={handleChange} />
+        <TextField required id="standard-basic" label="Password" type="password" name='password' onChange={handleChange} />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={state.remember}
+              onChange={handleChange}
+              name="remember"
+              color="primary"
+            />
+          }
+          label="Remember me"
+        />
+        <Button type='submit' variant="contained" color="primary">
+          Log In
+        </Button>
+      </form>
+    </React.Fragment>
   );
 }

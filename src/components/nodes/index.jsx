@@ -9,15 +9,13 @@ import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRoun
 import ShuffleRoundedIcon from '@material-ui/icons/ShuffleRounded';
 import DeleteForeverRoundedIcon from '@material-ui/icons/DeleteForeverRounded';
 import SaveRoundedIcon from '@material-ui/icons/SaveRounded';
-import CancelRoundedIcon from '@material-ui/icons/CancelRounded';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 import {base} from '../../base';
 import {connect} from 'react-redux';
 import {userLoggedIn, userLoggedOut} from '../../redux/actions';
 import NodeItem from '../nodeItem';
-import Box from '@material-ui/core/Box';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
-import CardActions from '@material-ui/core/CardActions';
 
 const styles = {
     root:{
@@ -116,11 +114,14 @@ class Nodes extends React.Component {
     }
     workFlow.nodes.push(newNode);
     this.setState({
-      workFlow: workFlow
-    });
-    base.database()
+      workFlow: workFlow,
+      shouldDisplaySnackbar: true,
+      notification: 'Node Added Successfully.'
+    }, () => {
+      base.database()
     .ref(`workFlows/${this.props.currentUser.uID}/${this.props.match.params.id}`)
     .set(this.state.workFlow)
+    });
   }
 
   updateNodeData = (nodeItem) => () => {
@@ -163,7 +164,9 @@ class Nodes extends React.Component {
       const workflow = this.state.workFlow;
       workflow.nodes=newNodeList;
       this.setState({
-          workFlow: workflow
+          workFlow: workflow,
+          shouldDisplaySnackbar: true,
+          notification: 'The last added node was removed.'
       })
     }
 
@@ -171,6 +174,10 @@ class Nodes extends React.Component {
     base.database()
     .ref(`workFlows/${this.props.currentUser.uID}/${this.props.match.params.id}`)
     .set(this.state.workFlow)
+    this.setState({
+      shouldDisplaySnackbar: true,
+      notification: 'Nodes have been successfully saved.'
+    })
   }
 
   handleChange = (event) => {
@@ -184,25 +191,34 @@ class Nodes extends React.Component {
       [workflow.nodes[i], workflow.nodes[j]] = [workflow.nodes[j], workflow.nodes[i]];
     }
     this.setState({
-        workFlow: workflow
+        workFlow: workflow,
+        shouldDisplaySnackbar: true,
+        notification: 'Shuffle Successfull !!'
+    })
+  }
+
+  handleClose = () => {
+    this.setState({
+      shouldDisplaySnackbar: false
     })
   }
 
   render(){
     const {classes} = this.props;
     const {
-        id,
         nodes = [],
-        name,
-        status
+        name
     } = this.state.workFlow;
-    let doNotAllowShuffle = false;
-    nodes.forEach((node) => {
+    let shouldAllowShuffle = false;
+    if(nodes.length>0) {
+      shouldAllowShuffle = true;
+      nodes.forEach((node) => {
         if(!node.isComplete){
-            doNotAllowShuffle = true;
-            return
+          shouldAllowShuffle = false;
+          return
         }
-    });
+      })
+    }
 
     return (
         <React.Fragment>
@@ -211,19 +227,19 @@ class Nodes extends React.Component {
                 <TextField 
                  id="outlined-basic" variant="outlined" label={name} type="text" onChange={this.handleChange} />
                 <div className={classes.nodeButtonsDiv}>
-                <Button onClick={this.shuffler} disabled={doNotAllowShuffle} className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
+                <Button onClick={this.shuffler} disabled={!shouldAllowShuffle || !this.state.dataLoaded} className={classes.button} type='submit' variant="contained" style={{background: '#7600b0'}}>
                     <ShuffleRoundedIcon style={{marginRight: '5px'}} />
                     Shuffle
                 </Button>
-                <Button onClick={this.deleteLatestNode} className={classes.button} type='submit' variant="contained" style={{background: '#f80929'}}>
+                <Button onClick={this.deleteLatestNode} disabled={!(nodes.length>0) || !this.state.dataLoaded} className={classes.button} type='submit' variant="contained" style={{background: '#f80929'}}>
                     <DeleteForeverRoundedIcon style={{marginRight: '5px'}} />
                     Delete
                 </Button>
-                <Button onClick={this.addNode} className={classes.button} type='submit' variant="contained" style={{background: '#12be51'}}>
+                <Button onClick={this.addNode} disabled={!this.state.dataLoaded} className={classes.button} type='submit' variant="contained" style={{background: '#12be51'}}>
                     <AddCircleOutlineRoundedIcon style={{marginRight: '5px'}} />
                     Add Node
                 </Button>
-                <Button onClick={this.save} className={classes.button} type='submit' variant="contained" style={{background: '#3c5bd8'}}>
+                <Button onClick={this.save} disabled={!this.state.dataLoaded} className={classes.button} type='submit' variant="contained" style={{background: '#3c5bd8'}}>
                     <SaveRoundedIcon style={{marginRight: '5px'}} />
                     Save
                 </Button>
@@ -232,8 +248,10 @@ class Nodes extends React.Component {
         </AppBar>
         <div>
           {
-            this.state.dataLoaded
-            ? nodes.map((node) => (
+            this.state.dataLoaded ?
+            (
+            nodes.length>0 ?
+            nodes.map((node) => (
               <NodeItem
                 updateNodeData={this.updateNodeData}
                 key = {node.nodeId}
@@ -242,11 +260,33 @@ class Nodes extends React.Component {
             ))
             : 
             <div className={classes.loader}>
-                <h1>Loading...</h1><br/>
+                <hr/><h3>No Nodes Present. Add some nodes to the workflow.</h3><hr/>
+            </div>
+            )
+            :
+            <div className={classes.loader}>
+                <h1>Loading Nodes...</h1><br/>
                 <CircularProgress />
             </div>
           }
         </div>
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          open={this.state.shouldDisplaySnackbar}
+          autoHideDuration={5000}
+          onClose={this.handleClose}
+          message={this.state.notification}
+          action={
+            <React.Fragment>
+              <IconButton size="small" aria-label="close" color="inherit" onClick={this.handleClose}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </React.Fragment>
+          }
+        />
         </React.Fragment>
     );
   }

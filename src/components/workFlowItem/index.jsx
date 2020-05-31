@@ -70,7 +70,6 @@ class WorkFlowItem extends React.Component {
     if(tmpItem.isComplete){
       tmpItem.isComplete = false;
     }else{
-      console.log({tmpItem})
       let allowedToComplete = true;
       tmpItem.nodes.forEach((node)=>{
         if(!node.isComplete){
@@ -90,8 +89,7 @@ class WorkFlowItem extends React.Component {
       classes,
       item,
       deleteClickHandler,
-      itemClickHandler,
-      stateClickHandler
+      itemClickHandler
     } = this.props;
 
     return (

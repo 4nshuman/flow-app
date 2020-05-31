@@ -7,7 +7,6 @@ import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Typography from '@material-ui/core/Typography';
 import Badge from '@material-ui/core/Badge';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 import {connect} from 'react-redux';
 import {userLoggedIn} from '../../redux/actions';
@@ -32,12 +31,6 @@ const styles = {
       color: '#17ba51'
     }
 };
-
-const StyledBadge = withStyles((theme) => ({
-    badge: {
-      color: 'green'
-    },
-  }))(Badge);
 
 class NodeItem extends React.Component {
   constructor(props){
