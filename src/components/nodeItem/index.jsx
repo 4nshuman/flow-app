@@ -1,12 +1,14 @@
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-import Box from '@material-ui/core/Box';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
-import CardActions from '@material-ui/core/CardActions';
-import Typography from '@material-ui/core/Typography';
-import Badge from '@material-ui/core/Badge';
+import {
+  withStyles,
+  TextField,
+  Box,
+  Card,
+  CardContent,
+  CardActions,
+  Typography,
+  Badge
+} from '@material-ui/core';
 
 import {connect} from 'react-redux';
 import {userLoggedIn} from '../../redux/actions';
@@ -40,47 +42,33 @@ class NodeItem extends React.Component {
     }
   }
 
-  handleFilter = () =>{
-      console.log('handle Filter')
-  }
-
   handleChange = (event) => {
     const tmp = this.state.item;
     tmp[event.target.name] = event.target.value;
     this.setState({ 
       item: tmp
-    }, this.props.updateNodeData(this.state.item));
+    });
   };
 
-  stateHandler = () => {
-    const tmpItem = this.state.item;
-    if(tmpItem.isComplete){
-      tmpItem.isComplete = false;
-      tmpItem.inProgress = false;
-    }else if(tmpItem.inProgress){
-      tmpItem.isComplete = true;
-      tmpItem.inProgress = false;
-    }else{
-      tmpItem.isComplete = false;
-      tmpItem.inProgress = true;
-    }
-    this.setState({
-      item: tmpItem
-    }, this.props.updateNodeData(this.state.item));
+  static getDerivedStateFromProps(props, state){
+    return {
+      item: props.item
+    };
   }
 
   render(){
     const {
-      classes
+      classes,
+      stateHandler,
     } = this.props;
     const item = this.state.item;
 
     const statusColor = item.isComplete ? "#17ba51" : item.inProgress ? "#3d86f9" : "#bcbcbc"
-
+    
     return (
         <Badge 
         style={{color: statusColor}}
-        className={classes.root} badgeContent={<Status clickHandler={this.stateHandler}/>}>
+        className={classes.root} badgeContent={<Status clickHandler={stateHandler(item)}/>}>
         <Box boxShadow={3}>
             <Card variant="outlined">
                 <CardContent>

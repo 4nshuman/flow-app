@@ -1,20 +1,30 @@
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import {
+  withStyles,
+  AppBar,
+  Toolbar,
+  Button,
+  TextField,
+  CircularProgress,
+  Snackbar,
+  IconButton
+} from '@material-ui/core';
+
 import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRounded';
 import ShuffleRoundedIcon from '@material-ui/icons/ShuffleRounded';
 import DeleteForeverRoundedIcon from '@material-ui/icons/DeleteForeverRounded';
 import SaveRoundedIcon from '@material-ui/icons/SaveRounded';
-import Snackbar from '@material-ui/core/Snackbar';
-import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
+
 import {base} from '../../base';
 import {connect} from 'react-redux';
-import {userLoggedIn, userLoggedOut} from '../../redux/actions';
+import {
+  userLoggedIn,
+  userLoggedOut,
+  nodeAdded,
+  workFlowOpened,
+  nodeDeleted
+} from '../../redux/actions';
 import NodeItem from '../nodeItem';
 
 const styles = {
@@ -65,16 +75,14 @@ class Nodes extends React.Component {
     let dataLoaded = false;
     snapshot.forEach((snap) => {
         if(snap.val().id === parseInt(this.props.match.params.id)){
-            this.setState({
-                workFlow:{
-                    id: snap.val().id,
-                    isComplete: snap.val().isComplete,
-                    nodes: snap.val().nodes || [],
-                    name: snap.val().name,
-                    owner: snap.val().owner
-                }
-            });
-            dataLoaded = true;
+          this.props.workFlowOpened({
+            id: snap.val().id,
+            isComplete: snap.val().isComplete,
+            nodes: snap.val().nodes || [],
+            name: snap.val().name,
+            owner: snap.val().owner
+          })
+          dataLoaded = true;
         }
     })
     this.setState({
@@ -101,8 +109,22 @@ class Nodes extends React.Component {
       });
     }
 
+    static getDerivedStateFromProps(props, state){
+      if(!state.isFiltering){
+        return{
+          workFlow: props.openWorkFlow
+        };
+      }
+    }
+
+    displaySnackbar = (notification) => {
+      this.setState({
+        shouldDisplaySnackbar: true,
+        notification
+      });
+    }
+
   addNode = () =>{
-    const workFlow = this.state.workFlow;
     const id = Date.now();
     const newNode = {
         nodeId: id,
@@ -111,63 +133,75 @@ class Nodes extends React.Component {
         taskName: 'New Task',
         description: 'Placeholder multi-line description - should be edited.'
     }
-    workFlow.nodes.push(newNode);
-    this.setState({
-      workFlow: workFlow,
-      shouldDisplaySnackbar: true,
-      notification: 'Node Added Successfully.'
-    }, () => {
-      base.database()
-    .ref(`workFlows/${this.props.currentUser.uID}/${this.props.match.params.id}`)
-    .set(this.state.workFlow)
-    });
-  }
-
-  updateNodeData = (nodeItem) => () => {
-      const newNodesList = this.state.workFlow.nodes.map((node) => {
-          if(node.nodeId === nodeItem.nodeId){
-              return nodeItem;
-          }
-          else{
-              return node;
-          }
-      })
-      const workFlow = this.state.workFlow;
-      if(!nodeItem.isComplete){
-          workFlow.isComplete = false;
-      }      
-      workFlow.nodes = newNodesList;
-      this.setState({      
-        workFlow: workFlow
-      });
+    this.props.nodeAdded(newNode);
+    this.displaySnackbar('Node Added Successfully.');
   }
 
   deleteLatestNode = () => {
-      let latestNodeId = -1;
-      const newNodeList = [];
-      if((this.state.workFlow.nodes||[]).length < 1){
-          console.log('No Nodes Present');
-      }
-      else{
-        this.state.workFlow.nodes.forEach((node) => {
-            if(node.nodeId > latestNodeId){
-                latestNodeId = node.nodeId
-            }
-        });
-        this.state.workFlow.nodes.forEach((node) => {
-            if(node.nodeId !== latestNodeId){
-                newNodeList.push(node);
-            }
-        });
-      }
-      const workflow = this.state.workFlow;
-      workflow.nodes=newNodeList;
-      this.setState({
-          workFlow: workflow,
-          shouldDisplaySnackbar: true,
-          notification: 'The last added node was removed.'
-      })
+    let latestNodeId = -1;
+    if((this.state.workFlow.nodes||[]).length < 1){
+        this.displaySnackbar('No node present to delete.')
     }
+    else{
+      this.state.workFlow.nodes.forEach((node) => {
+          if(node.nodeId > latestNodeId){
+              latestNodeId = node.nodeId
+          }
+      });
+    }
+    this.props.nodeDeleted(latestNodeId);
+    this.displaySnackbar('The last added node was removed.');
+  }
+
+  stateHandler = (nodeItem) => () => {
+    let canUpdateNodeStatusToComplete = true;
+    this.state.workFlow.nodes.every((node) => {
+      if(node.nodeId === nodeItem.nodeId){
+        return false;
+      }else if(!node.isComplete){
+        canUpdateNodeStatusToComplete = node.isComplete;
+        return false;
+      }
+      return true;
+    });
+    
+    const updatedNodesList = [];
+    let updateSucceedingNodes = false;
+    this.state.workFlow.nodes.forEach((node) => {
+      const newNode = {...node}
+      if(newNode.nodeId === nodeItem.nodeId){
+        if(newNode.isComplete){
+          newNode.isComplete = false;
+          newNode.inProgress = false;
+          updateSucceedingNodes = true;
+        }else if(newNode.inProgress){
+          newNode.isComplete = canUpdateNodeStatusToComplete;
+          newNode.inProgress = false;
+          if(!canUpdateNodeStatusToComplete){
+            this.setState({
+              shouldDisplaySnackbar: true,
+              notification: 'This node cannot be set to complete. \n Previous nodes are not completed'
+            })
+          }
+        }else{
+          newNode.isComplete = false;
+          newNode.inProgress = true;
+        }
+      }else if(updateSucceedingNodes){
+        newNode.isComplete = false;
+      }
+      updatedNodesList.push(newNode);
+    });
+
+    const workflow = this.state.workFlow;
+    workflow.nodes = updatedNodesList;
+    if(updateSucceedingNodes){
+      workflow.isComplete = false;
+    }
+    this.setState({
+      workFlow: workflow
+    });
+  }
 
   save = () => {
     base.database()
@@ -176,7 +210,7 @@ class Nodes extends React.Component {
     this.setState({
       shouldDisplaySnackbar: true,
       notification: 'Nodes have been successfully saved.'
-    })
+    });
   }
 
   handleChange = (event) => {
@@ -253,7 +287,7 @@ class Nodes extends React.Component {
               (
                 nodes.map((node) => (
                   <NodeItem
-                    updateNodeData={this.updateNodeData}
+                    stateHandler={this.stateHandler}
                     key = {node.nodeId}
                     item = {node}
                   />
@@ -298,14 +332,18 @@ class Nodes extends React.Component {
 
 const mapStateToProps = state => {
   return {
-      currentUser: state.currentUser
+      currentUser: state.currentUser,
+      openWorkFlow: state.openWorkFlow
   }
 };
 
 const mapDispatchToProps = dispatch => {
   return {
       userLoggedIn: (user) => {dispatch(userLoggedIn(user))},
-      userLoggedOut: (user) => {dispatch(userLoggedOut())}
+      userLoggedOut: (user) => {dispatch(userLoggedOut())},
+      workFlowOpened: (workFlow) => {dispatch(workFlowOpened(workFlow))},
+      nodeAdded: (node) => {dispatch(nodeAdded(node))},
+      nodeDeleted: (nodeId) => {dispatch(nodeDeleted(nodeId))}
   }
 };
 

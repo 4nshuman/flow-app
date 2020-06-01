@@ -1,14 +1,17 @@
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-import Box from '@material-ui/core/Box';
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
-import CardActions from '@material-ui/core/CardActions';
-import Typography from '@material-ui/core/Typography';
-import Badge from '@material-ui/core/Badge';
-import Snackbar from '@material-ui/core/Snackbar';
-import IconButton from '@material-ui/core/IconButton';
+import { 
+  withStyles,
+  TextField,
+  Box,
+  Card,
+  CardContent,
+  CardActions,
+  Typography,
+  Badge,
+  Snackbar,
+  IconButton
+} from '@material-ui/core';
+
 import CloseIcon from '@material-ui/icons/Close';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
@@ -115,7 +118,7 @@ class WorkFlowItem extends React.Component {
         invisible={this.state.shouldNotDisplayDelete}
         onMouseEnter={() => this.setState({shouldNotDisplayDelete:false})}
         onMouseLeave={() => this.setState({shouldNotDisplayDelete:true})}
-        className={classes.root} badgeContent={<Delete clickHandler={deleteClickHandler(item)}/>} color="secondary">
+        className={classes.root} badgeContent={<Delete clickHandler={deleteClickHandler(item.id)}/>} color="secondary">
         <Box boxShadow={3}>
             <Card variant="outlined" onClick={itemClickHandler}>
                 <CardContent>

@@ -1,20 +1,31 @@
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import { 
+  withStyles,
+  AppBar,
+  Toolbar,
+  Button,
+  TextField,
+  CircularProgress,
+  Snackbar,
+  IconButton
+} from '@material-ui/core';
+import {
+  DropdownButton,
+  Dropdown
+} from 'react-bootstrap'
 import AddCircleOutlineRoundedIcon from '@material-ui/icons/AddCircleOutlineRounded';
-import DropdownButton from 'react-bootstrap/DropdownButton'
-import Dropdown from 'react-bootstrap/Dropdown'
-import {connect} from 'react-redux';
-import {userLoggedIn, workFlowsAdded} from '../../redux/actions';
-import WorkFlowItem from '../workFlowItem';
-import Snackbar from '@material-ui/core/Snackbar';
-import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
+
+import {connect} from 'react-redux';
+import WorkFlowItem from '../workFlowItem';
 import {base} from '../../base';
+import {
+  userLoggedIn,
+  workFlowsLoaded,
+  workFlowAdded,
+  workFlowEdited,
+  workFlowDeleted,
+} from '../../redux/actions';
 
 const styles = {
     root:{
@@ -47,13 +58,16 @@ class WorkFlow extends React.Component {
     this.state = {
       dataLoaded: false,
       shouldNotDisplayDelete: true,
+      isFiltering: false,
       workFlows: []
     };
     this.firestoreGetter = base.database().ref(`workFlows/${this.props.currentUser.uID}`);
   }
 
   componentDidMount(){
-    this.firestoreGetter.on("value", this.setData, this.setError);
+    if(!this.state.dataLoaded){
+      this.firestoreGetter.on("value", this.setData, this.setError);
+    }
   }
 
   setData = (snapshot) => {
@@ -63,37 +77,46 @@ class WorkFlow extends React.Component {
           temp.push(snap.val());
         }
     });
+    
+    this.props.workFlowsLoaded(temp);
     this.setState({
-      workFlows: temp,
       dataLoaded: true
-    }, this.props.workFlowsAdded(temp));   
+    });
   }
 
   setError = (errorObject) => {
     console.log("The read failed: " + errorObject.code);
   }
 
+  displaySnackBar(notification){
+    this.setState({
+      shouldDisplaySnackbar: true,
+      notification
+    });
+  }
+
   addWorkFlow = () =>{
-    const workFlows = this.state.workFlows;
     const id = Date.now();
-    const newWorkFlow = {
+    const newWorkFlowItem = {
       id: id,
       owner: this.props.currentUser.uID,
       name: `New WorkFlow`,
       isComplete: false,
       nodes: []
     };
-    workFlows.push(newWorkFlow);
-    this.setState({
-      workFlows: workFlows
-    });
+    this.props.workFlowAdded(newWorkFlowItem);
     base.database()
     .ref(`workFlows/${this.props.currentUser.uID}/${id}`)
-    .set(newWorkFlow)
-    this.setState({
-      shouldDisplaySnackbar: true,
-      notification: 'New workflow has been added.'
-    })
+    .set(newWorkFlowItem);
+    this.displaySnackBar('New workflow has been added.');
+  }
+
+  static getDerivedStateFromProps(props, state){
+    if(!state.isFiltering){
+      return{
+        workFlows: props.workFlows
+      };
+    }
   }
 
   navigateToNodes = (event, id) => {
@@ -102,46 +125,26 @@ class WorkFlow extends React.Component {
     }
   }
 
-  deleteClickHandler = (workFlowItem) => () => {
-    const workFlowList = this.props.workFlows.filter((workFlow) => (
-      workFlow.id !== workFlowItem.id
-    ));
-    this.setState({
-      workFlows: workFlowList
-    }, this.props.workFlowsAdded(workFlowList));
+  deleteClickHandler = (workFlowItemId) => () => {
+    this.props.workFlowDeleted(workFlowItemId);
     base.database()
-    .ref(`workFlows/${this.props.currentUser.uID}/${workFlowItem.id}`)
+    .ref(`workFlows/${this.props.currentUser.uID}/${workFlowItemId}`)
     .remove();
-    this.setState({
-      shouldDisplaySnackbar: true,
-      notification: 'The workflow has been deleted.'
-    })
+    this.displaySnackBar(`The ${workFlowItemId} workflow has been deleted.`);
   }
 
   updateWorkFlow = (item) => () => {
-    const newWorkflowList = this.props.workFlows.map((workFlow) => {
-      if(item.id === workFlow.id){
-          return item;
-      }
-      else{
-          return workFlow;
-      }
-    })
-    this.setState({
-      workFlows: newWorkflowList
-    }, this.props.workFlowsAdded(newWorkflowList));
-    newWorkflowList.forEach((workFlow) => {
-      base.database()
-      .ref(`workFlows/${this.props.currentUser.uID}/${workFlow.id}`)
-      .set(workFlow);
-    })
+    this.props.workFlowEdited(item);
+    base.database()
+      .ref(`workFlows/${this.props.currentUser.uID}/${item.id}`)
+      .set(item);
   }
 
   filter = (event) =>{
     if(event.target.name === 'searchTerm'){
       if(event.target.value === ''){
         this.setState({
-          workFlows: this.props.workFlows
+          isFiltering: false
         })
       }
       else{
@@ -152,11 +155,13 @@ class WorkFlow extends React.Component {
           }
         });
         this.setState({
-          workFlows: filteredList
+          workFlows: filteredList,
+          isFiltering: true
         });
       }
     }else{
       const filteredList = [];
+      let isFiltering = true;
       switch(event.target.name){
         case 'completed':
           this.props.workFlows.forEach((workFlow) => {
@@ -174,13 +179,12 @@ class WorkFlow extends React.Component {
           });
           break;
         default:
-          this.props.workFlows.forEach((workFlow) => {
-            filteredList.push(workFlow);
-          });
+          isFiltering= false;
           break;
       }
       this.setState({
-        workFlows: filteredList
+        workFlows: filteredList,
+        isFiltering
       });
     }
   }
@@ -197,7 +201,7 @@ class WorkFlow extends React.Component {
         <React.Fragment>
         <AppBar position="static" style={{background:"white"}}>
             <Toolbar>
-                <TextField className={classes.filterFields} required id="outlined-basic" variant="outlined" label="Search Workflows" type="email" name="searchTerm" onChange={this.filter} />
+                <TextField className={classes.filterFields} id="outlined-basic" variant="outlined" label="Search Workflows" type="text" name="searchTerm" onChange={this.filter} />
                 <DropdownButton style={{marginLeft: '3%'}} id="dropdown-basic-button" title="Filter">
                   <Dropdown.Item name='all' value="all" onClick={this.filter}>All</Dropdown.Item>
                   <Dropdown.Item name='completed' value="completed" onClick={this.filter}>Completed</Dropdown.Item>
@@ -268,7 +272,10 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return {
       userLoggedIn: (user) => {dispatch(userLoggedIn(user))},
-      workFlowsAdded: (workFlows) => {dispatch(workFlowsAdded(workFlows))}
+      workFlowsLoaded: (workFlowsList) => {dispatch(workFlowsLoaded(workFlowsList))},
+      workFlowAdded: (workFlow) => {dispatch(workFlowAdded(workFlow))},
+      workFlowEdited: (workFlow) => {dispatch(workFlowEdited(workFlow))},
+      workFlowDeleted: (workFlowItemId) => {dispatch(workFlowDeleted(workFlowItemId))}
   }
 };
 
